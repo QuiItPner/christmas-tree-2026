@@ -251,8 +251,25 @@ let state = 'TREE';
 let manualOverrideUntil = 0;
 let selectedIndex = 0;
 let handX = 0.5;
+let handY = 0.5;          // Vị trí dọc của bàn tay (0 = mép trên camera, 1 = mép dưới)
+let selectedRow = 1;      // Hàng đang chọn khi bung chai: 2 = hàng trên, 1 = hàng giữa, 0 = hàng dưới
 let isDragging = false;
 let prevMouseX = 0;
+
+// Cập nhật vị trí tay (làm mượt trục dọc để tránh rung)
+function updateHandPosition(lm) {
+    handX = lm[9].x;
+    handY += (lm[9].y - handY) * 0.5;
+    updateSelectedRowFromHand();
+}
+
+// Đưa tay lên cao → hàng trên, ngang tầm → hàng giữa, hạ thấp → hàng dưới.
+// Có vùng đệm (hysteresis) để hàng không bị nhảy qua lại khi tay ở ranh giới.
+function updateSelectedRowFromHand() {
+    if (handY < 0.40) selectedRow = 2;
+    else if (handY > 0.60) selectedRow = 0;
+    else if (handY > 0.45 && handY < 0.55) selectedRow = 1;
+}
 
 // ==========================================
 // 4. KHỞI TẠO KHÔNG GIAN 3D
@@ -882,19 +899,15 @@ function animate() {
             mesh.position.lerp(new THREE.Vector3(x, y, z), 0.1);
             mesh.lookAt(camera.position);
 
-            // Ưu tiên chọn sản phẩm gần camera nhất ở tầng giữa hoặc đang hướng thẳng về phía trước
-            const frontScore = z - Math.abs(baseY) * 0.15;
-            if (frontScore > maxScore) {
-                maxScore = frontScore;
+            // Chọn chai gần camera nhất (hướng thẳng phía trước) trong hàng mà tay đang trỏ tới
+            if (ringIdx === selectedRow && z > maxScore) {
+                maxScore = z;
                 bestIdx = i;
             }
 
-            if (z > 10) {
-                const ds = 0.85 + (z / ringRadius) * 0.65;
-                mesh.scale.lerp(new THREE.Vector3(ds, ds, ds), 0.1);
-            } else {
-                mesh.scale.lerp(new THREE.Vector3(0.48, 0.48, 0.48), 0.1);
-            }
+            let ds = (z > 10) ? 0.85 + (z / ringRadius) * 0.65 : 0.48;
+            if (i === selectedIndex) ds *= 1.25; // Làm nổi bật chai sẽ được mở khi chụm ngón
+            mesh.scale.lerp(new THREE.Vector3(ds, ds, ds), 0.1);
         });
         selectedIndex = bestIdx;
 
@@ -987,6 +1000,12 @@ function setupMouseAndTouchControls(container) {
     window.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowRight') stepProduct(1);
         else if (e.key === 'ArrowLeft') stepProduct(-1);
+        else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            // Chuyển hàng trên / dưới khi đang bung chai
+            selectedRow = Math.max(0, Math.min(2, selectedRow + (e.key === 'ArrowUp' ? 1 : -1)));
+            handY = [0.75, 0.5, 0.25][selectedRow];
+            setManualState('EXPLODE');
+        }
         else if (e.key === 'Escape') setManualState('EXPLODE');
     });
 }
@@ -1010,7 +1029,7 @@ function startSystem() {
         // Nếu người dùng vừa bấm nút trên màn hình, ưu tiên giữ trạng thái đó
         if (Date.now() < manualOverrideUntil) {
             if (results.multiHandLandmarks.length > 0) {
-                handX = results.multiHandLandmarks[0][9].x;
+                updateHandPosition(results.multiHandLandmarks[0]);
             }
             return;
         }
@@ -1030,7 +1049,9 @@ function startSystem() {
 
         if (results.multiHandLandmarks.length > 0) {
             const lm = results.multiHandLandmarks[0];
-            handX = lm[9].x;
+            // Khi đang chụm ngón (PHOTO) thì giữ nguyên hàng đã chọn, tránh tay xê dịch làm đổi chai
+            if (state !== 'PHOTO') updateHandPosition(lm);
+            else handX = lm[9].x;
             const tips = [8, 12, 16, 20];
             const wrist = lm[0];
             let openDist = 0;
