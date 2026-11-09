@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giáng Sinh Mùa Vàng - Nông Nghiệp Phú Nông</title>
+
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="./style.css">
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="./products_data.js"></script>
+</head>
+
+<body>
+    <div id="error-log"></div>
+
+    <!-- Brand Header -->
+    <div id="top-header">
+        <img src="./logo_pn_white.png" alt="Phú Nông" onerror="this.style.display='none'">
+    </div>
+
+    <!-- Product Spotlight Banner -->
+    <div id="product-banner">
+        <button class="prod-nav-btn" onclick="stepProduct(-1)" title="Sản phẩm trước">❮</button>
+        <span id="product-name-text">Biona Organic</span>
+        <span id="product-count-tag">1 / 43</span>
+        <button class="prod-nav-btn" onclick="stepProduct(1)" title="Sản phẩm tiếp theo">❯</button>
+    </div>
+
+    <!-- Bottom UI Layer -->
+    <div id="ui-layer">
+        <div class="guide">
+            🖐 <b>Xòe tay:</b> Bung 43 Chai SP &nbsp;|&nbsp; 👌 <b>Chụm ngón / Click:</b> Xem SP &nbsp;|&nbsp; 🫶 <b>Tim
+                2 tay:</b> Tri Ân &nbsp;|&nbsp; ✊ <b>Nắm tay:</b> Cây Thông
+        </div>
+        <button id="btnStart" onclick="startSystem()">🌾 BẮT ĐẦU MÙA VÀNG 🎄</button>
+    </div>
+
+    <div id="copyright">it@phunong.com.vn</div>
+
+    <div id="canvas-container"></div>
+    <video class="input_video" style="display:none"></video>
+    <canvas id="camera-preview"></canvas>
+
+    <!-- Main Application Script -->
+    <script src="./main.js"></script>
+</body>
+
+</html>
